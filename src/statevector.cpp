@@ -4,6 +4,9 @@
 #include <cmath>
 
 namespace qsim {
+    static inline bool is_power_of_two(std::size_t x) {
+        return x && ((x & (x - 1)) == 0);
+    }
 
     StateVector::StateVector(std::uint32_t num_qubits) : n_(num_qubits) {
         if (n_ == 0) throw std::invalid_argument("num_qubits must be >= 1");
@@ -121,5 +124,58 @@ namespace qsim {
         renormalize_inplace();
         return outcome;
     }
+    void StateVector::CNOT(std::uint32_t control, std::uint32_t target, std::size_t threads) {
+        if (control >= n_ || target >= n_) throw std::out_of_range("CNOT qubit index out of range");
+        if (control == target) throw std::invalid_argument("CNOT control and target must be different");
+
+        const std::size_t N = state_.size();
+        if (!is_power_of_two(N)) throw std::runtime_error("State vector size must be power of two");
+
+        const std::size_t cMask = (std::size_t(1) << control);
+        const std::size_t tMask = (std::size_t(1) << target);
+
+        // CNOT: if control bit is 1, flip target bit.
+        // Implementation: swap amplitudes of |...1...0...> and |...1...1...> for the target bit,
+        // but only for basis indices with control=1 and target=0 (so we swap each pair once).
+
+        if (threads <= 1) {
+            for (std::size_t i = 0; i < N; ++i) {
+                if ((i & cMask) && ((i & tMask) == 0)) {
+                    std::size_t j = i | tMask; // flip target to 1
+                    std::swap(state_[i], state_[j]);
+                }
+            }
+            return;
+        }
+
+        // Multithreaded: split the index range into chunks.
+        threads = std::max<std::size_t>(1, threads);
+        threads = std::min<std::size_t>(threads, N);
+
+        auto worker = [&](std::size_t begin, std::size_t end) {
+            for (std::size_t i = begin; i < end; ++i) {
+                if ((i & cMask) && ((i & tMask) == 0)) {
+                    std::size_t j = i | tMask;
+                    std::swap(state_[i], state_[j]);
+                }
+            }
+            };
+
+        std::vector<std::thread> pool;
+        pool.reserve(threads);
+
+        std::size_t chunk = N / threads;
+        std::size_t rem = N % threads;
+
+        std::size_t start = 0;
+        for (std::size_t t = 0; t < threads; ++t) {
+            std::size_t size = chunk + (t < rem ? 1 : 0);
+            std::size_t end = start + size;
+            pool.emplace_back(worker, start, end);
+            start = end;
+        }
+        for (auto& th : pool) th.join();
+    }
+
 
 } // namespace qsim

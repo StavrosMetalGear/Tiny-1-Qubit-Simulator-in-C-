@@ -11,6 +11,7 @@ static void print_help() {
         R"(Usage:
   CMakeTarget --mode qubit
   CMakeTarget --mode nqubit --qubits N --threads T
+  CMakeTarget --mode bell --threads T --shots S
 
 Examples:
   CMakeTarget --mode qubit
@@ -19,6 +20,8 @@ Examples:
 Modes:
   qubit   : interactive 1-qubit simulator
   nqubit  : small demo on N-qubit statevector (applies H then measures qubit 0)
+  bell    : Bell state demo with 2 qubits (creates |Ö+> and measures correlations
+  bell    : prepares Bell state (H + CNOT) and measures statistics
 )";
 }
 
@@ -117,6 +120,51 @@ static void run_nqubit_demo(std::uint32_t n, std::size_t threads) {
     std::cout << "Measured qubit 0 -> " << outcome << "\n";
     std::cout << "After collapse, norm^2 = " << sv.norm2() << "\n";
 }
+static void run_bell_demo(std::size_t threads, std::size_t shots) {
+    std::mt19937_64 rng(std::random_device{}());
+
+    // Bell state on 2 qubits:
+    // Start |00>
+    // H on qubit 0
+    // CNOT control=0 target=1
+    // => (|00> + |11>) / sqrt(2)
+    qsim::StateVector sv(2);
+
+    sv.H(0, threads);
+    sv.CNOT(0, 1, threads);
+
+    std::cout << "Bell State Demo (|Ö+>)\n";
+    std::cout << "----------------------\n";
+    std::cout << "Threads: " << threads << "\n";
+    std::cout << "Shots:   " << shots << "\n";
+    std::cout << "Norm^2:  " << sv.norm2() << "\n\n";
+
+    // Measure many times to show correlations.
+    // IMPORTANT: measurement collapses state, so re-prepare each shot.
+    std::size_t c00 = 0, c01 = 0, c10 = 0, c11 = 0;
+
+    for (std::size_t s = 0; s < shots; ++s) {
+        qsim::StateVector tmp(2);
+        tmp.H(0, threads);
+        tmp.CNOT(0, 1, threads);
+
+        int b0 = tmp.measure_qubit(0, rng);
+        int b1 = tmp.measure_qubit(1, rng);
+
+        if (b0 == 0 && b1 == 0) ++c00;
+        else if (b0 == 0 && b1 == 1) ++c01;
+        else if (b0 == 1 && b1 == 0) ++c10;
+        else ++c11;
+    }
+
+    std::cout << "Counts:\n";
+    std::cout << "  00: " << c00 << "\n";
+    std::cout << "  01: " << c01 << "\n";
+    std::cout << "  10: " << c10 << "\n";
+    std::cout << "  11: " << c11 << "\n";
+    std::cout << "\nExpected: mostly 00 and 11 (about 50/50), near-zero 01 and 10.\n";
+}
+
 
 int main(int argc, char** argv) {
     std::vector<std::string> args(argv + 1, argv + argc);
@@ -137,6 +185,12 @@ int main(int argc, char** argv) {
         std::uint32_t n = static_cast<std::uint32_t>(std::stoul(get_arg(args, "--qubits", "4")));
         std::size_t threads = static_cast<std::size_t>(std::stoul(get_arg(args, "--threads", "1")));
         run_nqubit_demo(n, threads);
+        return 0;
+    }
+    if (mode == "bell") {
+        std::size_t threads = static_cast<std::size_t>(std::stoul(get_arg(args, "--threads", "1")));
+        std::size_t shots = static_cast<std::size_t>(std::stoul(get_arg(args, "--shots", "1000")));
+        run_bell_demo(threads, shots);
         return 0;
     }
 

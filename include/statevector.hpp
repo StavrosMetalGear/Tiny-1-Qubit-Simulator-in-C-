@@ -8,6 +8,7 @@
 #include "gates.hpp"
 
 namespace qsim {
+    
 
     class StateVector {
     public:
@@ -29,7 +30,8 @@ namespace qsim {
 
         // Quick sanity check: sum(|amp|^2)
         double norm2() const;
-
+        // Two-qubit gate
+        void CNOT(std::uint32_t control, std::uint32_t target, std::size_t threads = 1);
     private:
         std::uint32_t n_;
         std::vector<Complex> state_;
