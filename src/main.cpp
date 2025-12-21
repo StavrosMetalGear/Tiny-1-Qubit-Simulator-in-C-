@@ -2,6 +2,8 @@
 #include <string>
 #include <random>
 #include <vector>
+#include <chrono>
+#include <cstdint>
 
 #include "qubit.hpp"
 #include "statevector.hpp"
@@ -12,7 +14,12 @@ static void print_help() {
   CMakeTarget --mode qubit
   CMakeTarget --mode nqubit --qubits N --threads T
   CMakeTarget --mode bell --threads T --shots S
+  QuantumSimulator --mode bench --qubits N --depth D --threads T [--seed S] [--compare]
 
+Modes:
+  ...
+  bench   : benchmark random 1-qubit gates on an N-qubit statevector
+  bench   : benchmark random 1-qubit gates on an N-qubit statevector
 Examples:
   CMakeTarget --mode qubit
   CMakeTarget --mode nqubit --qubits 20 --threads 8
@@ -164,6 +171,60 @@ static void run_bell_demo(std::size_t threads, std::size_t shots) {
     std::cout << "  11: " << c11 << "\n";
     std::cout << "\nExpected: mostly 00 and 11 (about 50/50), near-zero 01 and 10.\n";
 }
+static void run_bench(std::uint32_t n,
+    std::size_t depth,
+    std::size_t threads,
+    std::uint64_t seed,
+    bool compare_single_thread)
+{
+    using clock = std::chrono::steady_clock;
+
+    auto run_once = [&](std::size_t tcount) -> double {
+        qsim::StateVector sv(n);
+        std::mt19937_64 rng(seed);
+
+        std::uniform_int_distribution<std::uint32_t> qb(0, n - 1);
+        std::uniform_int_distribution<int> gate(0, 2); // 0=X,1=Z,2=H
+
+        auto t0 = clock::now();
+        for (std::size_t d = 0; d < depth; ++d) {
+            std::uint32_t target = qb(rng);
+            int g = gate(rng);
+
+            if (g == 0) sv.X(target, tcount);
+            else if (g == 1) sv.Z(target, tcount);
+            else sv.H(target, tcount);
+        }
+        auto t1 = clock::now();
+
+        std::chrono::duration<double, std::milli> ms = t1 - t0;
+        return ms.count();
+        };
+
+    std::cout << "Benchmark Mode\n";
+    std::cout << "--------------\n";
+    std::cout << "Qubits:   " << n << "\n";
+    std::cout << "Depth:    " << depth << " gates\n";
+    std::cout << "Threads:  " << threads << "\n";
+    std::cout << "Seed:     " << seed << "\n\n";
+
+    if (compare_single_thread) {
+        double ms1 = run_once(1);
+        double msT = run_once(threads);
+
+        std::cout << "Runtime (1 thread):   " << ms1 << " ms\n";
+        std::cout << "Runtime (" << threads << " threads): " << msT << " ms\n";
+        if (msT > 0.0) {
+            std::cout << "Speedup: " << (ms1 / msT) << "x\n";
+        }
+    }
+    else {
+        double ms = run_once(threads);
+        std::cout << "Runtime: " << ms << " ms\n";
+    }
+
+    std::cout << "\nTip: try bigger n (e.g., 18–24) and larger depth to see speedups.\n";
+}
 
 
 int main(int argc, char** argv) {
@@ -191,6 +252,18 @@ int main(int argc, char** argv) {
         std::size_t threads = static_cast<std::size_t>(std::stoul(get_arg(args, "--threads", "1")));
         std::size_t shots = static_cast<std::size_t>(std::stoul(get_arg(args, "--shots", "1000")));
         run_bell_demo(threads, shots);
+        return 0;
+    }
+    if (mode == "bench") {
+        std::uint32_t n = static_cast<std::uint32_t>(std::stoul(get_arg(args, "--qubits", "20")));
+        std::size_t depth = static_cast<std::size_t>(std::stoul(get_arg(args, "--depth", "200")));
+        std::size_t threads = static_cast<std::size_t>(std::stoul(get_arg(args, "--threads", "1")));
+        std::uint64_t seed = static_cast<std::uint64_t>(std::stoull(get_arg(args, "--seed", "123")));
+
+        bool compare = has_flag(args, "--compare");
+        if (threads < 1) threads = 1;
+
+        run_bench(n, depth, threads, seed, compare);
         return 0;
     }
 
