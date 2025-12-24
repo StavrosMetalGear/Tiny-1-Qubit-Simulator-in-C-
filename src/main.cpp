@@ -29,6 +29,8 @@ Modes:
   nqubit  : small demo on N-qubit statevector (applies H then measures qubit 0)
   bell    : Bell state demo with 2 qubits (creates |Ö+> and measures correlations
   bell    : prepares Bell state (H + CNOT) and measures statistics
+  QuantumSimulator --mode bell --threads T --shots S [--seed S]
+
 )";
 }
 
@@ -127,7 +129,7 @@ static void run_nqubit_demo(std::uint32_t n, std::size_t threads) {
     std::cout << "Measured qubit 0 -> " << outcome << "\n";
     std::cout << "After collapse, norm^2 = " << sv.norm2() << "\n";
 }
-static void run_bell_demo(std::size_t threads, std::size_t shots) {
+static void run_bell_demo(std::size_t threads, std::size_t shots, std::uint64_t seed) {
     std::mt19937_64 rng(std::random_device{}());
 
     // Bell state on 2 qubits:
@@ -251,6 +253,8 @@ int main(int argc, char** argv) {
     if (mode == "bell") {
         std::size_t threads = static_cast<std::size_t>(std::stoul(get_arg(args, "--threads", "1")));
         std::size_t shots = static_cast<std::size_t>(std::stoul(get_arg(args, "--shots", "1000")));
+        std::uint64_t seed = static_cast<std::uint64_t>(std::stoull(get_arg(args, "--seed", "123")));
+
         run_bell_demo(threads, shots);
         return 0;
     }
