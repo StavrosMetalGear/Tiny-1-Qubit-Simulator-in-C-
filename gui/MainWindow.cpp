@@ -33,6 +33,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     if (maxThreads < 1) maxThreads = 1;
     threads_->setRange(1, std::max(1, maxThreads));
     threads_->setValue(std::min(4, threads_->maximum()));
+    seed_ = new QSpinBox(this);
+    seed_->setRange(0, 2000000000);
+    seed_->setValue(123);
 
     shots_ = new QSpinBox(this);
     shots_->setRange(1, 200000);
@@ -65,6 +68,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     row2->addSpacing(12);
     row2->addWidget(new QLabel("Depth:"));
     row2->addWidget(depth_);
+    row2->addSpacing(12);
+    row2->addWidget(new QLabel("Seed:"));
+    row2->addWidget(seed_);
+
 
     auto* buttons = new QHBoxLayout();
     buttons->addWidget(hBtn_);
@@ -116,7 +123,8 @@ void MainWindow::onApplyH0() {
 void MainWindow::onRunBell() {
     const std::size_t T = (std::size_t)threads_->value();
     const std::size_t shots = (std::size_t)shots_->value();
-    std::mt19937_64 rng(std::random_device{}());
+    std::mt19937_64 rng((std::uint64_t)seed_->value());
+
 
     std::size_t c00 = 0, c01 = 0, c10 = 0, c11 = 0;
 
@@ -148,7 +156,8 @@ void MainWindow::onRunBench() {
 
     auto run_once = [&](std::size_t threads) -> double {
         qsim::StateVector sv(n);
-        std::mt19937_64 rng(123);
+        std::mt19937_64 rng((std::uint64_t)seed_->value());
+
 
         std::uniform_int_distribution<std::uint32_t> qb(0, n - 1);
         std::uniform_int_distribution<int> gate(0, 2);
