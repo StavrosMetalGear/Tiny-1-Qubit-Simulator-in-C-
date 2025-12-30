@@ -15,6 +15,8 @@ static void print_help() {
   CMakeTarget --mode nqubit --qubits N --threads T
   CMakeTarget --mode bell --threads T --shots S
   QuantumSimulator --mode bench --qubits N --depth D --threads T [--seed S] [--compare]
+  QuantumSimulator --mode bench --qubits N --depth D --threads T [--seed S] [--compare]
+  QuantumSimulator --mode bell --threads T --shots S [--seed S]
 
 Modes:
   ...
@@ -130,7 +132,8 @@ static void run_nqubit_demo(std::uint32_t n, std::size_t threads) {
     std::cout << "After collapse, norm^2 = " << sv.norm2() << "\n";
 }
 static void run_bell_demo(std::size_t threads, std::size_t shots, std::uint64_t seed) {
-    std::mt19937_64 rng(std::random_device{}());
+    //std::mt19937_64 rng(std::random_device{}());
+    std::mt19937_64 rng(seed);
 
     // Bell state on 2 qubits:
     // Start |00>

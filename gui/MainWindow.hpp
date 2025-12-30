@@ -26,6 +26,7 @@ private:
     QSpinBox* shots_;
     QSpinBox* depth_;
     QSpinBox* seed_;
+    
 
     QTextEdit* output_;
     QPushButton* bellBtn_;
