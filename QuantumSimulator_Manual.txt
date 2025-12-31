@@ -1,0 +1,172 @@
+﻿QuantumSimulator
+C++ Quantum Computing Simulator with Multithreading and GUI
+1. Project Overview
+
+QuantumSimulator is a classical quantum circuit simulator implemented in modern C++.
+It supports both educational and performance-oriented simulation of quantum systems using the statevector model.
+
+The project consists of:
+
+A 1-qubit simulator for learning and verification
+
+An N-qubit statevector simulator with multithreading
+
+A command-line interface (CLI)
+
+A Qt-based graphical user interface (GUI)
+
+Benchmarking and reproducibility support
+
+The simulator is intended for:
+
+learning quantum computation
+
+testing quantum circuits
+
+experimenting with performance scaling and parallelism
+
+2. Supported Simulation Modes
+2.1 1-Qubit Mode
+
+Represents a single qubit as:
+|ψ⟩ = α|0⟩ + β|1⟩
+
+Supports gates:
+
+Pauli-X
+
+Pauli-Z
+
+Hadamard
+
+Supports probabilistic measurement and state collapse
+
+Interactive CLI
+
+2.2 N-Qubit Statevector Mode
+
+Represents n qubits as a vector of size 2ⁿ
+
+Supports:
+
+Single-qubit gates on arbitrary targets
+
+Controlled-NOT (CNOT)
+
+Measurement of individual qubits
+
+Uses multithreading to accelerate gate application
+
+Designed to scale up to memory limits
+
+3. Benchmark Mode
+
+Benchmark mode generates reproducible random quantum circuits and measures execution time.
+
+Features:
+
+Configurable number of qubits
+
+Configurable circuit depth
+
+Configurable thread count
+
+Deterministic random generation using seeds
+
+Comparison between single-threaded and multi-threaded execution
+
+Example:
+
+QuantumSimulator --mode bench --qubits 24 --depth 2000 --threads 8 --seed 999 --compare
+
+4. Bell State Demonstration
+
+The simulator includes a Bell-state experiment:
+
+Prepare |00⟩
+
+Apply H on qubit 0
+
+Apply CNOT(0,1)
+
+Measure repeatedly
+
+This demonstrates:
+
+entanglement
+
+quantum correlations
+
+probabilistic measurement statistics
+
+5. Reproducibility
+
+All random processes support a fixed seed:
+
+benchmark circuit generation
+
+measurement shots
+
+Using the same seed guarantees identical circuit structure and measurement sequences.
+
+6. Graphical User Interface (GUI)
+
+The Qt-based GUI provides:
+
+Mode selection
+
+Qubit count selection
+
+Thread count selection
+
+Seed input
+
+Bell experiment execution
+
+Benchmark execution
+
+The GUI links against the same simulation core used by the CLI.
+
+7. Software Architecture
+
+Core logic implemented as a reusable C++ library (qsim_core)
+
+CLI and GUI are separate frontends
+
+Clear separation of concerns:
+
+physics
+
+performance
+
+user interaction
+
+8. Build and Distribution
+
+Built using CMake
+
+Qt GUI packaged using windeployqt
+
+Release build distributed as a portable Windows executable
+
+9. Intended Use
+
+This simulator is intended for:
+
+educational use
+
+experimentation
+
+performance benchmarking
+
+preparation for real quantum hardware programming
+
+10. Limitations
+
+Classical simulation scales exponentially with qubit count
+
+Not intended for production-scale quantum simulation
+
+Does not model noise or decoherence (yet)
+
+End of manual.
