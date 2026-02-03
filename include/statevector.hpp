@@ -17,6 +17,9 @@ namespace qsim {
         std::uint32_t num_qubits() const { return n_; }
         std::size_t dim() const { return state_.size(); }
 
+        // Read-only access for observers/debug
+        const std::vector<Complex>& amplitudes() const { return state_; }
+
         void set_zero_state(); // |00..0>
 
         // Apply 1-qubit gates to target qubit (0 = least significant bit)
